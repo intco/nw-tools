@@ -144,17 +144,20 @@ def GenerateExecutableApp(nw_path, target):
   os.chdir(exec_app_path)
   if is_cygwin or is_linux or is_darwin:
     if nwfiles.GetPlatformName(target) == nwfiles.PLATFORMNAMELINUX:
-      subprocess.call('cat nw %s > app && chmod +x app' % (app_tar_name),
-                      shell=True)
+      sp_args = ['cat', 'nw', app_tar_name, '>', 'app', '&&', 'chmod', '+x', 'app']
+      #subprocess.call('cat nw %s > app && chmod +x app' % (app_tar_name), shell=True)
     if nwfiles.GetPlatformName(target) == nwfiles.PLATFORMNAMEWIN:
-      subprocess.call('cat nw.exe %s > app.exe && chmod +x app.exe' % (app_tar_name)
-                      , shell=True)
+      sp_args = ['cat', 'nw.exe', app_tar_name, '>', 'app.exe', '&&', 'chmod', '+x', 'app.exe']
+      #subprocess.call('cat nw.exe %s > app.exe && chmod +x app.exe' % (app_tar_name), shell=True)
   elif is_win:
     if nwfiles.GetPlatformName(target) == nwfiles.PLATFORMNAMELINUX:
-      subprocess.call('copy /b nw+%s app' % (app_tar_name), shell=True)
+      sp_args = ['copy', '/b', 'nw', '+', app_tar_name, 'app']
+      #subprocess.call('copy /b nw+%s app' % (app_tar_name), shell=True)
     if nwfiles.GetPlatformName(target) == nwfiles.PLATFORMNAMEWIN:
-      subprocess.call('copy /b nw.exe+%s app.exe' % (app_tar_name), shell=True)
+      #subprocess.call('copy /b nw.exe+%s app.exe' % (app_tar_name), shell=True)
+      sp_args = ['copy', '/b', 'nw.exe', '+', app_tar_name, 'app.exe']
 
+    subprocess.call(sp_args, shell=True)
 
   if nwfiles.GetPlatformName(target) == nwfiles.PLATFORMNAMELINUX:
     os.remove('nw')
