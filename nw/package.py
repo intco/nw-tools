@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os
+import os, sys
 import subprocess
 import shutil
 import re
@@ -41,14 +41,55 @@ def MakeZip():
   """ copy files """
   if os.path.isdir(tmp_app_path):
     shutil.rmtree(tmp_app_path)
+  
+  fileList = []
+  folderList = []
+  
+  for root, subFolders, files in os.walk(top):
+      for sub_folder in subFolders:
+        sub_folder_path = os.path.join(root, sub_folder)
+        sub_folder_path = os.path.abspath(os.path.join(tmp_app_path, sub_folder_path))
+        folderList.append(sub_folder_path);
+        
+      for file in files:
+          fileList.append(os.path.join(root,file))
+
+  
+  if options['slimit']:
+    from slimit import minify
 
   os.mkdir(tmp_app_path)
-  for name in os.listdir(top):
-    if not name in ignore_dirs:
-      if os.path.isfile(name):
-        shutil.copy(name, os.path.join(tmp_app_path, name))
-      else:
-        shutil.copytree(name, os.path.join(tmp_app_path, name))
+  
+  for fld in folderList:
+    print "Creating temp dir %s" % (fld);
+    os.mkdir(fld);
+  
+  for fil in fileList:
+    print fil
+    src_file = os.path.abspath(os.path.join(options['path_to_app_src'], fil))
+    dst_file = os.path.abspath(os.path.join(tmp_app_path, fil))
+    print "- copying file -"
+    print "[SRC] %s " % src_file
+    print "[DST] %s " % dst_file
+    apply_slimit = options['slimit'] and (os.path.splitext(src_file)[1] == '.js') and (not "node_modules" in src_file)
+    
+    if not apply_slimit:
+        shutil.copy(src_file, dst_file)
+    else:
+        print "\t Minifying js ... "
+        with open(src_file, 'r') as f:
+            src_string = f.read()
+            dst_string = minify(src_string, mangle=True);
+            dst_fp     = open(dst_file, 'wb')
+            dst_fp.write(dst_string)
+            dst_fp.close()
+    
+  #for name in os.listdir(top):
+  #  if not name in ignore_dirs:
+  #    if os.path.isfile(name):
+  #      shutil.copy(name, os.path.join(tmp_app_path, name))
+  #    else:
+  #      shutil.copytree(name, os.path.join(tmp_app_path, name))
   """"""
 
   app_zip_path = os.path.join(options['path_for_package'], app_name)
@@ -149,7 +190,7 @@ def CheckNwFiles(target):
     if not nw_path:
       print 'Failed at downloading'
       return None
-  # print options['path_to_nw']
+  print "checking %s %s" % (nw_path, target)
   if not nwfiles.CheckNwFiles(nw_path, target):
     print 'files are not completed.'
     return None
@@ -189,6 +230,7 @@ def __add_argument(parser):
   parser.add_argument("--keep",
                       action='store_true',
                       help="keep download files")
+  parser.add_argument("--slimit", action="store_true", help="Compress javascript using slimit package")
 
 
 
@@ -206,7 +248,17 @@ def main(app_path, nw_path, nw_ver, **kw):
     'path_for_exec_app': '',
     'app_name': '',
     'keep': kw['keep'],
+    'slimit': kw['slimit']
   }
+  
+  if (options['slimit']):
+    try:
+        from slimit import minify
+    except ImportError:
+        print "*** FATAL ERROR: "
+        print "--slimit option was specified but the module can not be imported. Install it or remove the --slimit option"
+        sys.exit(1);
+  
   options['path_to_app_src'] = os.path.abspath(app_path)
   options['path_for_package'] = os.path.join(options['path_to_app_src'], _DIR_FOR_APP)
   options['path_for_exec_app'] = os.path.join(options['path_for_package'], _DIR_FOR_EXEC)
