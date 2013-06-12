@@ -37,7 +37,7 @@ $ python nw_package_tool --help
 
   optional arguments:
     -h, --help         show this help message and exit
-    --slimit           minify javascript (.js) files - requires [slimit module][python-slimit]
+    --slimit           minify javascript (.js) files - requires `slimit` module (https://pypi.python.org/pypi/slimit/)
     
   exclusive options:
     As for following options, at most one can be set
